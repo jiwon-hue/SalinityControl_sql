@@ -6,42 +6,37 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Cloudtype 배포 시 필기사항
 const pool = mysql.createPool({
-  host: 'mariadb', 
-  user: 'root',
-  password: 'jiwonsql',
-  database: 'mysql', // MariaDB 초기 기본 DB 이름 (유지)
-  port: 3306,
-  waitForConnections: true,
-  connectionLimit: 10
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME || 'salternSQL',
+  port: 3306,
+  waitForConnections: true,
+  connectionLimit: 10
 });
 
-
-// db 생성
 const initDB = async () => {
-  try {
-    await pool.query(`CREATE DATABASE IF NOT EXISTS saltern_db`);
-    // [수정] USE 명령어 대신, 테이블 만들 때 앞에 saltern_db. 를 붙임 (확실한 방법)
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS saltern_db.devices (
-        mac_address VARCHAR(17) PRIMARY KEY,
-        name VARCHAR(50),
-        salinity FLOAT DEFAULT 0,
-        target_salinity FLOAT DEFAULT 100,
-        valve BOOLEAN DEFAULT FALSE,
-        manual_mode BOOLEAN DEFAULT FALSE,
-        is_final BOOLEAN DEFAULT FALSE,
-        lat FLOAT DEFAULT 0,
-        lng FLOAT DEFAULT 0,
-        address VARCHAR(255),
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      )
-    `);
-    console.log("DB 생성 완료");
-  } catch (err) {
-    console.error("DB 초기화 실패:", err);
-  }
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS saltern_db.devices (
+        mac_address VARCHAR(17) PRIMARY KEY,
+        name VARCHAR(50),
+        salinity FLOAT DEFAULT 0,
+        target_salinity FLOAT DEFAULT 100,
+        valve BOOLEAN DEFAULT FALSE,
+        manual_mode BOOLEAN DEFAULT FALSE,
+        is_final BOOLEAN DEFAULT FALSE,
+        lat FLOAT DEFAULT 0,
+        lng FLOAT DEFAULT 0,
+        address VARCHAR(255),
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    console.log("초기화 완료");
+  } catch (err) {
+    console.error("에러:", err);
+  }
 };
 initDB();
 
@@ -151,8 +146,9 @@ app.put('/api/device/:mac', async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log('서버 실행중');
+  console.log('실행중');
 
 });
+
 
 
